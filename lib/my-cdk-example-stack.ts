@@ -1,18 +1,27 @@
-import * as sns from '@aws-cdk/aws-sns';
-import * as subs from '@aws-cdk/aws-sns-subscriptions';
-import * as sqs from '@aws-cdk/aws-sqs';
-import * as cdk from '@aws-cdk/core';
+import { CfnOutput, Construct, Stack, StackProps } from '@aws-cdk/core';
+import * as apigw from '@aws-cdk/aws-apigateway';
+import * as lambda from '@aws-cdk/aws-lambda';
+import path = require('path');
 
-export class MyCdkExampleStack extends cdk.Stack {
-  constructor(scope: cdk.App, id: string, props?: cdk.StackProps) {
+export class MyCdkExampleStack extends Stack {
+  public readonly urlOutput: CfnOutput;
+
+  constructor(scope: Construct, id: string, props?: StackProps) {
     super(scope, id, props);
 
-    const queue = new sqs.Queue(this, 'MyCdkExampleQueue', {
-      visibilityTimeout: cdk.Duration.seconds(300)
+    const lambdaHandler = new lambda.Function(this, 'MyCdkExampleLambda', {
+      runtime: lambda.Runtime.PYTHON_3_6,
+      handler: 'handler.handler',
+      code: lambda.Code.fromAsset(path.resolve(__dirname, '../slack-lambda-functions')),
     });
 
-    const topic = new sns.Topic(this, 'MyCdkExampleTopic');
+    const apiGw = new apigw.LambdaRestApi(this, 'MyCdkExampleApiGateway', {
+      description: 'Endpoint for a trigger Slack Lambda Function',
+      handler: lambdaHandler,
+    });
 
-    topic.addSubscription(new subs.SqsSubscription(queue));
+    this.urlOutput = new CfnOutput(this, 'Url', {
+      value: apiGw.url,
+    });
   }
 }

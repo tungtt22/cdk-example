@@ -1,0 +1,4 @@
+[submodule "slack-lambda-functions"]
+	path = slack-lambda-functions
+	url = git@github.com:tungtt22/slack-lambda-functions.git
+	branch = develop
